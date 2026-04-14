@@ -11,7 +11,7 @@ import { Plus, Trash2, TrendingUp, TrendingDown, DollarSign } from 'lucide-react
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { toast } from 'sonner';
 
-const emptyForm = { type: 'income' as const, category: '', amount: 0, description: '', date: '' };
+const emptyForm: { type: 'income' | 'expense'; category: string; amount: number; description: string; date: string } = { type: 'income', category: '', amount: 0, description: '', date: '' };
 
 const FinancePage = () => {
   const { transactions, addTransaction, deleteTransaction } = useStore();

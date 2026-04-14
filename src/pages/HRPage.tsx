@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Pencil, Trash2, Search } from 'lucide-react';
 import { toast } from 'sonner';
 
-const emptyForm = { name: '', email: '', department: '', role: '', salary: 0, joinDate: '', status: 'active' as const };
+const emptyForm: { name: string; email: string; department: string; role: string; salary: number; joinDate: string; status: 'active' | 'inactive' } = { name: '', email: '', department: '', role: '', salary: 0, joinDate: '', status: 'active' };
 
 const HRPage = () => {
   const { employees, addEmployee, updateEmployee, deleteEmployee } = useStore();
