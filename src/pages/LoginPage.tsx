@@ -3,17 +3,18 @@ import { useStore } from '@/store/useStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Building2 } from 'lucide-react';
+import { Building2, AlertTriangle } from 'lucide-react';
 
 const LoginPage = () => {
   const login = useStore((s) => s.login);
   const [name, setName] = useState('');
-  const [role, setRole] = useState<'Admin' | 'Manager' | 'Employee'>('Admin');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (name.trim()) login(name.trim(), role);
+    // Demo only: role is fixed to 'Employee'. Real role assignment must come
+    // from a server-validated session (e.g. Supabase Auth + a profiles/roles
+    // table enforced via RLS). Never trust a client-supplied role claim.
+    if (name.trim()) login(name.trim(), 'Employee');
   };
 
   return (
@@ -28,24 +29,23 @@ const LoginPage = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="bg-card rounded-xl border p-6 shadow-sm space-y-4">
+          <div className="flex gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs text-foreground">
+            <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+            <p>
+              <span className="font-semibold">Demo prototype:</span> this login is not secure and
+              uses local mock data only. Do not enter real credentials or store sensitive
+              information.
+            </p>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="name">Full Name</Label>
-            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter your name" required />
+            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter your name" required maxLength={100} />
           </div>
-          <div className="space-y-2">
-            <Label>Role</Label>
-            <Select value={role} onValueChange={(v) => setRole(v as typeof role)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Admin">Admin</SelectItem>
-                <SelectItem value="Manager">Manager</SelectItem>
-                <SelectItem value="Employee">Employee</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <Button type="submit" className="w-full">Sign In</Button>
+          <Button type="submit" className="w-full">Continue</Button>
         </form>
-        <p className="text-xs text-muted-foreground text-center mt-4">Demo: Enter any name to continue</p>
+        <p className="text-xs text-muted-foreground text-center mt-4">
+          Demo: any name continues as a standard Employee user.
+        </p>
       </div>
     </div>
   );
