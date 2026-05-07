@@ -8,13 +8,18 @@ import { Building2 } from 'lucide-react';
 const LoginPage = () => {
   const login = useStore((s) => s.login);
   const [name, setName] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Demo only: role is fixed to 'Employee'. Real role assignment must come
-    // from a server-validated session (e.g. Supabase Auth + a profiles/roles
-    // table enforced via RLS). Never trust a client-supplied role claim.
-    if (name.trim()) login(name.trim(), 'Employee');
+    setError('');
+    if (!name.trim()) return;
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+    login(name.trim(), 'Employee');
   };
 
   return (
@@ -33,10 +38,15 @@ const LoginPage = () => {
             <Label htmlFor="name">Full Name</Label>
             <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter your name" required maxLength={100} />
           </div>
-          <Button type="submit" className="w-full">Continue</Button>
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter your password" required minLength={6} maxLength={100} />
+          </div>
+          {error && <p className="text-xs text-destructive">{error}</p>}
+          <Button type="submit" className="w-full">Sign in</Button>
         </form>
         <p className="text-xs text-muted-foreground text-center mt-4">
-          Demo: any name continues as a standard Employee user.
+          Local sign-in. For real authentication, enable Lovable Cloud.
         </p>
       </div>
     </div>
