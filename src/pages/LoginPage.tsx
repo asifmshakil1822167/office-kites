@@ -3,7 +3,7 @@ import { useStore } from '@/store/useStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Building2, AlertTriangle } from 'lucide-react';
+import { Building2 } from 'lucide-react';
 
 const LoginPage = () => {
   const login = useStore((s) => s.login);
