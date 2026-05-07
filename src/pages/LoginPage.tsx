@@ -3,7 +3,7 @@ import { useStore } from '@/store/useStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Building2, AlertTriangle } from 'lucide-react';
+import { Building2 } from 'lucide-react';
 
 const LoginPage = () => {
   const login = useStore((s) => s.login);
@@ -29,14 +29,6 @@ const LoginPage = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="bg-card rounded-xl border p-6 shadow-sm space-y-4">
-          <div className="flex gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs text-foreground">
-            <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
-            <p>
-              <span className="font-semibold">Demo prototype:</span> this login is not secure and
-              uses local mock data only. Do not enter real credentials or store sensitive
-              information.
-            </p>
-          </div>
           <div className="space-y-2">
             <Label htmlFor="name">Full Name</Label>
             <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter your name" required maxLength={100} />
