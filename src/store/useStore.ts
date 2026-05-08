@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { supabase } from '@/integrations/supabase/client';
+import type { User } from '@supabase/supabase-js';
 
 export interface Employee {
   id: string;
@@ -37,70 +39,159 @@ export interface Transaction {
   date: string;
 }
 
+interface AppUser {
+  id: string;
+  email: string;
+  name: string;
+}
+
 interface AppState {
-  user: { name: string; role: 'Admin' | 'Manager' | 'Employee' } | null;
+  user: AppUser | null;
+  authLoading: boolean;
   employees: Employee[];
   attendance: AttendanceRecord[];
   products: Product[];
   transactions: Transaction[];
-  login: (name: string, role: 'Admin' | 'Manager' | 'Employee') => void;
-  logout: () => void;
-  addEmployee: (e: Omit<Employee, 'id'>) => void;
-  updateEmployee: (id: string, e: Partial<Employee>) => void;
-  deleteEmployee: (id: string) => void;
-  addAttendance: (a: Omit<AttendanceRecord, 'id'>) => void;
-  addProduct: (p: Omit<Product, 'id'>) => void;
-  updateProduct: (id: string, p: Partial<Product>) => void;
-  deleteProduct: (id: string) => void;
-  addTransaction: (t: Omit<Transaction, 'id'>) => void;
-  deleteTransaction: (id: string) => void;
+  setUser: (u: AppUser | null) => void;
+  setAuthLoading: (v: boolean) => void;
+  logout: () => Promise<void>;
+  fetchAll: () => Promise<void>;
+  addEmployee: (e: Omit<Employee, 'id'>) => Promise<void>;
+  updateEmployee: (id: string, e: Partial<Employee>) => Promise<void>;
+  deleteEmployee: (id: string) => Promise<void>;
+  addProduct: (p: Omit<Product, 'id'>) => Promise<void>;
+  updateProduct: (id: string, p: Partial<Product>) => Promise<void>;
+  deleteProduct: (id: string) => Promise<void>;
+  addTransaction: (t: Omit<Transaction, 'id'>) => Promise<void>;
+  deleteTransaction: (id: string) => Promise<void>;
 }
 
-const uid = () => Math.random().toString(36).slice(2, 10);
+const mapEmployee = (r: any): Employee => ({
+  id: r.id, name: r.name, email: r.email, department: r.department,
+  role: r.role, salary: Number(r.salary), joinDate: r.join_date, status: r.status,
+});
+const mapProduct = (r: any): Product => ({
+  id: r.id, name: r.name, sku: r.sku, category: r.category,
+  quantity: r.quantity, price: Number(r.price), lowStockThreshold: r.low_stock_threshold,
+});
+const mapTransaction = (r: any): Transaction => ({
+  id: r.id, type: r.type, category: r.category, amount: Number(r.amount),
+  description: r.description, date: r.date,
+});
 
-const initialEmployees: Employee[] = [
-  { id: '1', name: 'Alice Johnson', email: 'alice@erp.com', department: 'Engineering', role: 'Developer', salary: 75000, joinDate: '2024-01-15', status: 'active' },
-  { id: '2', name: 'Bob Smith', email: 'bob@erp.com', department: 'Marketing', role: 'Manager', salary: 82000, joinDate: '2023-06-01', status: 'active' },
-  { id: '3', name: 'Carol Davis', email: 'carol@erp.com', department: 'Finance', role: 'Analyst', salary: 68000, joinDate: '2024-03-20', status: 'active' },
-  { id: '4', name: 'David Lee', email: 'david@erp.com', department: 'HR', role: 'Coordinator', salary: 55000, joinDate: '2024-07-10', status: 'active' },
-  { id: '5', name: 'Eva Martinez', email: 'eva@erp.com', department: 'Engineering', role: 'Lead', salary: 95000, joinDate: '2022-11-05', status: 'active' },
-];
-
-const initialProducts: Product[] = [
-  { id: '1', name: 'Office Chair', sku: 'FUR-001', category: 'Furniture', quantity: 45, price: 299, lowStockThreshold: 10 },
-  { id: '2', name: 'Standing Desk', sku: 'FUR-002', category: 'Furniture', quantity: 8, price: 549, lowStockThreshold: 10 },
-  { id: '3', name: 'Laptop - Pro', sku: 'TECH-001', category: 'Electronics', quantity: 22, price: 1299, lowStockThreshold: 5 },
-  { id: '4', name: 'Monitor 27"', sku: 'TECH-002', category: 'Electronics', quantity: 3, price: 399, lowStockThreshold: 5 },
-  { id: '5', name: 'Keyboard', sku: 'TECH-003', category: 'Electronics', quantity: 67, price: 79, lowStockThreshold: 15 },
-  { id: '6', name: 'Printer Paper', sku: 'SUP-001', category: 'Supplies', quantity: 120, price: 12, lowStockThreshold: 30 },
-];
-
-const initialTransactions: Transaction[] = [
-  { id: '1', type: 'income', category: 'Sales', amount: 15000, description: 'Q1 product sales', date: '2026-01-15' },
-  { id: '2', type: 'income', category: 'Services', amount: 8500, description: 'Consulting fees', date: '2026-02-10' },
-  { id: '3', type: 'expense', category: 'Salaries', amount: 42000, description: 'Monthly payroll', date: '2026-01-31' },
-  { id: '4', type: 'expense', category: 'Utilities', amount: 2300, description: 'Office utilities', date: '2026-02-01' },
-  { id: '5', type: 'income', category: 'Sales', amount: 22000, description: 'Q1 enterprise deal', date: '2026-03-05' },
-  { id: '6', type: 'expense', category: 'Equipment', amount: 5600, description: 'New laptops', date: '2026-03-12' },
-  { id: '7', type: 'expense', category: 'Marketing', amount: 3200, description: 'Ad campaign', date: '2026-04-01' },
-  { id: '8', type: 'income', category: 'Sales', amount: 18000, description: 'April sales', date: '2026-04-10' },
-];
-
-export const useStore = create<AppState>((set) => ({
+export const useStore = create<AppState>((set, get) => ({
   user: null,
-  employees: initialEmployees,
+  authLoading: true,
+  employees: [],
   attendance: [],
-  products: initialProducts,
-  transactions: initialTransactions,
-  login: (name, role) => set({ user: { name, role } }),
-  logout: () => set({ user: null }),
-  addEmployee: (e) => set((s) => ({ employees: [...s.employees, { ...e, id: uid() }] })),
-  updateEmployee: (id, e) => set((s) => ({ employees: s.employees.map((em) => em.id === id ? { ...em, ...e } : em) })),
-  deleteEmployee: (id) => set((s) => ({ employees: s.employees.filter((e) => e.id !== id) })),
-  addAttendance: (a) => set((s) => ({ attendance: [...s.attendance, { ...a, id: uid() }] })),
-  addProduct: (p) => set((s) => ({ products: [...s.products, { ...p, id: uid() }] })),
-  updateProduct: (id, p) => set((s) => ({ products: s.products.map((pr) => pr.id === id ? { ...pr, ...p } : pr) })),
-  deleteProduct: (id) => set((s) => ({ products: s.products.filter((p) => p.id !== id) })),
-  addTransaction: (t) => set((s) => ({ transactions: [...s.transactions, { ...t, id: uid() }] })),
-  deleteTransaction: (id) => set((s) => ({ transactions: s.transactions.filter((t) => t.id !== id) })),
+  products: [],
+  transactions: [],
+  setUser: (user) => set({ user }),
+  setAuthLoading: (authLoading) => set({ authLoading }),
+  logout: async () => {
+    await supabase.auth.signOut();
+    set({ user: null, employees: [], products: [], transactions: [], attendance: [] });
+  },
+  fetchAll: async () => {
+    const [emp, prod, tx] = await Promise.all([
+      supabase.from('employees').select('*').order('created_at', { ascending: false }),
+      supabase.from('products').select('*').order('created_at', { ascending: false }),
+      supabase.from('transactions').select('*').order('date', { ascending: false }),
+    ]);
+    set({
+      employees: (emp.data ?? []).map(mapEmployee),
+      products: (prod.data ?? []).map(mapProduct),
+      transactions: (tx.data ?? []).map(mapTransaction),
+    });
+  },
+  addEmployee: async (e) => {
+    const { data, error } = await supabase.from('employees').insert({
+      name: e.name, email: e.email, department: e.department, role: e.role,
+      salary: e.salary, join_date: e.joinDate || new Date().toISOString().slice(0, 10), status: e.status,
+    }).select().single();
+    if (error) throw error;
+    set((s) => ({ employees: [mapEmployee(data), ...s.employees] }));
+  },
+  updateEmployee: async (id, e) => {
+    const patch: any = {};
+    if (e.name !== undefined) patch.name = e.name;
+    if (e.email !== undefined) patch.email = e.email;
+    if (e.department !== undefined) patch.department = e.department;
+    if (e.role !== undefined) patch.role = e.role;
+    if (e.salary !== undefined) patch.salary = e.salary;
+    if (e.joinDate !== undefined) patch.join_date = e.joinDate;
+    if (e.status !== undefined) patch.status = e.status;
+    const { data, error } = await supabase.from('employees').update(patch).eq('id', id).select().single();
+    if (error) throw error;
+    set((s) => ({ employees: s.employees.map((x) => x.id === id ? mapEmployee(data) : x) }));
+  },
+  deleteEmployee: async (id) => {
+    const { error } = await supabase.from('employees').delete().eq('id', id);
+    if (error) throw error;
+    set((s) => ({ employees: s.employees.filter((x) => x.id !== id) }));
+  },
+  addProduct: async (p) => {
+    const { data, error } = await supabase.from('products').insert({
+      name: p.name, sku: p.sku, category: p.category, quantity: p.quantity,
+      price: p.price, low_stock_threshold: p.lowStockThreshold,
+    }).select().single();
+    if (error) throw error;
+    set((s) => ({ products: [mapProduct(data), ...s.products] }));
+  },
+  updateProduct: async (id, p) => {
+    const patch: any = {};
+    if (p.name !== undefined) patch.name = p.name;
+    if (p.sku !== undefined) patch.sku = p.sku;
+    if (p.category !== undefined) patch.category = p.category;
+    if (p.quantity !== undefined) patch.quantity = p.quantity;
+    if (p.price !== undefined) patch.price = p.price;
+    if (p.lowStockThreshold !== undefined) patch.low_stock_threshold = p.lowStockThreshold;
+    const { data, error } = await supabase.from('products').update(patch).eq('id', id).select().single();
+    if (error) throw error;
+    set((s) => ({ products: s.products.map((x) => x.id === id ? mapProduct(data) : x) }));
+  },
+  deleteProduct: async (id) => {
+    const { error } = await supabase.from('products').delete().eq('id', id);
+    if (error) throw error;
+    set((s) => ({ products: s.products.filter((x) => x.id !== id) }));
+  },
+  addTransaction: async (t) => {
+    const { data, error } = await supabase.from('transactions').insert({
+      type: t.type, category: t.category, amount: t.amount,
+      description: t.description, date: t.date || new Date().toISOString().slice(0, 10),
+    }).select().single();
+    if (error) throw error;
+    set((s) => ({ transactions: [mapTransaction(data), ...s.transactions] }));
+  },
+  deleteTransaction: async (id) => {
+    const { error } = await supabase.from('transactions').delete().eq('id', id);
+    if (error) throw error;
+    set((s) => ({ transactions: s.transactions.filter((x) => x.id !== id) }));
+  },
 }));
+
+export const initAuth = () => {
+  const setUser = useStore.getState().setUser;
+  const setAuthLoading = useStore.getState().setAuthLoading;
+
+  const toAppUser = (u: User | null): AppUser | null => u ? {
+    id: u.id,
+    email: u.email ?? '',
+    name: (u.user_metadata?.full_name as string) || (u.email ?? 'User'),
+  } : null;
+
+  supabase.auth.onAuthStateChange((_event, session) => {
+    const u = toAppUser(session?.user ?? null);
+    setUser(u);
+    if (u) {
+      setTimeout(() => { useStore.getState().fetchAll().catch(() => {}); }, 0);
+    }
+  });
+
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    const u = toAppUser(session?.user ?? null);
+    setUser(u);
+    setAuthLoading(false);
+    if (u) useStore.getState().fetchAll().catch(() => {});
+  });
+};
