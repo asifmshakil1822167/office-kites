@@ -53,7 +53,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
           <div className="flex items-center justify-between">
             <div className="min-w-0">
               <p className="text-sm font-medium text-sidebar-accent-foreground truncate">{user?.name}</p>
-              <p className="text-xs text-sidebar-muted">{user?.role}</p>
+              <p className="text-xs text-sidebar-muted truncate">{user?.email}</p>
             </div>
             <Button variant="ghost" size="icon" onClick={logout} className="text-sidebar-muted hover:text-sidebar-accent-foreground hover:bg-sidebar-accent shrink-0">
               <LogOut className="w-4 h-4" />
