@@ -3,8 +3,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useEffect } from "react";
-import { useStore, initAuth } from "@/store/useStore";
+import { useStore } from "@/store/useStore";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import HRPage from "./pages/HRPage";
@@ -29,9 +28,6 @@ const AuthenticatedApp = () => (
 
 const AppContent = () => {
   const user = useStore((s) => s.user);
-  const authLoading = useStore((s) => s.authLoading);
-  useEffect(() => { initAuth(); }, []);
-  if (authLoading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground text-sm">Loading…</div>;
   if (!user) return <LoginPage />;
   return <AuthenticatedApp />;
 };

@@ -1,48 +1,20 @@
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useStore } from '@/store/useStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Building2 } from 'lucide-react';
-import { toast } from 'sonner';
 
 const LoginPage = () => {
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const login = useStore((s) => s.login);
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.length < 6) {
-      toast.error('Password must be at least 6 characters.');
-      return;
-    }
-    setLoading(true);
-    try {
-      if (mode === 'signup') {
-        if (!name.trim()) { toast.error('Please enter your name.'); return; }
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-            data: { full_name: name.trim() },
-          },
-        });
-        if (error) throw error;
-        toast.success('Account created. You can sign in now.');
-        setMode('signin');
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-      }
-    } catch (err: any) {
-      toast.error(err.message ?? 'Authentication failed.');
-    } finally {
-      setLoading(false);
-    }
+    // Demo only: role is fixed to 'Employee'. Real role assignment must come
+    // from a server-validated session (e.g. Supabase Auth + a profiles/roles
+    // table enforced via RLS). Never trust a client-supplied role claim.
+    if (name.trim()) login(name.trim(), 'Employee');
   };
 
   return (
@@ -53,37 +25,19 @@ const LoginPage = () => {
             <Building2 className="w-7 h-7 text-primary-foreground" />
           </div>
           <h1 className="text-2xl font-bold text-foreground">ERP System</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            {mode === 'signin' ? 'Sign in to your workspace' : 'Create your account'}
-          </p>
+          <p className="text-muted-foreground text-sm mt-1">Sign in to your workspace</p>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-card rounded-xl border p-6 shadow-sm space-y-4">
-          {mode === 'signup' && (
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required maxLength={100} />
-            </div>
-          )}
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <Label htmlFor="name">Full Name</Label>
+            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter your name" required maxLength={100} />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} maxLength={100} />
-          </div>
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'}
-          </Button>
-          <button
-            type="button"
-            onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
-            className="w-full text-xs text-muted-foreground hover:text-foreground"
-          >
-            {mode === 'signin' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
-          </button>
+          <Button type="submit" className="w-full">Continue</Button>
         </form>
+        <p className="text-xs text-muted-foreground text-center mt-4">
+          Demo: any name continues as a standard Employee user.
+        </p>
       </div>
     </div>
   );
