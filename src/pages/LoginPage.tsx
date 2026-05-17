@@ -23,7 +23,19 @@ const LoginPage = () => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
-      toast({ title: 'Sign in failed', description: error.message, variant: 'destructive' });
+      const msg = /confirm/i.test(error.message)
+        ? 'Please verify your email address before signing in. Check your inbox for the confirmation link.'
+        : error.message;
+      toast({ title: 'Sign in failed', description: msg, variant: 'destructive' });
+      return;
+    }
+    if (!data.user?.email_confirmed_at && !data.user?.confirmed_at) {
+      await supabase.auth.signOut();
+      toast({
+        title: 'Email not verified',
+        description: 'Please confirm your email address before signing in.',
+        variant: 'destructive',
+      });
       return;
     }
     const name = data.user?.user_metadata?.full_name || data.user?.email || 'User';
