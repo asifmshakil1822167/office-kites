@@ -18,29 +18,6 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const PasswordField = ({ id, autoComplete, minLength }: { id: string; autoComplete: string; minLength?: number }) => (
-    <div className="relative">
-      <Input
-        id={id}
-        type={showPassword ? 'text' : 'password'}
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        required
-        minLength={minLength}
-        autoComplete={autoComplete}
-        className="pr-10"
-      />
-      <button
-        type="button"
-        onClick={() => setShowPassword((s) => !s)}
-        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
-        aria-label={showPassword ? 'Hide password' : 'Show password'}
-        tabIndex={-1}
-      >
-        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-      </button>
-    </div>
-  );
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
