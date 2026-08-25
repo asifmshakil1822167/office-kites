@@ -142,6 +142,107 @@ export type Database = {
         }
         Relationships: []
       }
+      service_request_events: {
+        Row: {
+          actor_id: string | null
+          actor_label: string | null
+          created_at: string
+          from_status:
+            | Database["public"]["Enums"]["service_request_status"]
+            | null
+          id: string
+          note: string | null
+          request_id: string
+          to_status:
+            | Database["public"]["Enums"]["service_request_status"]
+            | null
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_label?: string | null
+          created_at?: string
+          from_status?:
+            | Database["public"]["Enums"]["service_request_status"]
+            | null
+          id?: string
+          note?: string | null
+          request_id: string
+          to_status?:
+            | Database["public"]["Enums"]["service_request_status"]
+            | null
+        }
+        Update: {
+          actor_id?: string | null
+          actor_label?: string | null
+          created_at?: string
+          from_status?:
+            | Database["public"]["Enums"]["service_request_status"]
+            | null
+          id?: string
+          note?: string | null
+          request_id?: string
+          to_status?:
+            | Database["public"]["Enums"]["service_request_status"]
+            | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_request_events_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_requests: {
+        Row: {
+          assigned_to: string | null
+          category: string
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          customer_name: string
+          description: string | null
+          id: string
+          priority: Database["public"]["Enums"]["service_request_priority"]
+          reference: string
+          status: Database["public"]["Enums"]["service_request_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          category?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_name: string
+          description?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["service_request_priority"]
+          reference?: string
+          status?: Database["public"]["Enums"]["service_request_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          category?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_name?: string
+          description?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["service_request_priority"]
+          reference?: string
+          status?: Database["public"]["Enums"]["service_request_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           amount: number
@@ -208,6 +309,13 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "manager" | "employee"
+      service_request_priority: "low" | "medium" | "high" | "urgent"
+      service_request_status:
+        | "queue"
+        | "processing"
+        | "completed"
+        | "failed"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -336,6 +444,14 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "manager", "employee"],
+      service_request_priority: ["low", "medium", "high", "urgent"],
+      service_request_status: [
+        "queue",
+        "processing",
+        "completed",
+        "failed",
+        "cancelled",
+      ],
     },
   },
 } as const
